@@ -1,0 +1,26 @@
+name: Basic Jobs Demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  echo-vars-and-secrets:
+    name: 1 - Echo Variables and Secrets
+    runs-on: ubuntu-latest
+    environment: development
+
+    env:
+      MY_VARIABLE: ${{ vars.MY_VARIABLE }}
+      MY_SECRET: ${{ secrets.MY_SECRET }}
+
+    steps:
+      - name: Echo repository variable
+        run: echo "MY_VARIABLE = $MY_VARIABLE"
+
+      - name: Echo repository secret (value is masked as ** in the logs)
+        run: echo "MY_SECRET = $MY_SECRET"
+
+      - name: Echo built-in GITHUB_TOKEN secret (always available, also masked)
+        run: echo "GITHUB_TOKEN = ${{ secrets.GITHUB_TOKEN }}"
