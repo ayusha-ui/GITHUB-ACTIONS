@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ==================================================
+  # JOB 1: Variables and Secrets
+  # ==================================================
   echo-vars-and-secrets:
     name: 1 - Echo Variables and Secrets
     runs-on: ubuntu-latest
@@ -19,8 +22,88 @@ jobs:
       - name: Echo repository variable
         run: echo "MY_VARIABLE = $MY_VARIABLE"
 
-      - name: Echo repository secret (value is masked as ** in the logs)
+      - name: Echo repository secret
         run: echo "MY_SECRET = $MY_SECRET"
 
-      - name: Echo built-in GITHUB_TOKEN secret (always available, also masked)
+      - name: Echo GitHub Token
         run: echo "GITHUB_TOKEN = ${{ secrets.GITHUB_TOKEN }}"
+
+  # ==================================================
+  # JOB 2: Shell Script
+  # ==================================================
+  run-shell-script:
+    name: 2 - Use a Shell Script with Vars and Secrets
+    runs-on: ubuntu-latest
+    needs: echo-vars-and-secrets
+    environment: development
+
+    env:
+      MY_VARIABLE: ${{ vars.MY_VARIABLE }}
+      MY_SECRET: ${{ secrets.MY_SECRET }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: chmod +x ./scripts/print-vars-and-secrets.sh
+
+      - name: Run script
+        run: ./scripts/print-vars-and-secrets.sh
+
+  # ==================================================
+  # JOB 3: Pull MongoDB Docker Image
+  # ==================================================
+  pull-mongo-image:
+    name: 3 - Pull MongoDB Image from Docker Hub
+    runs-on: ubuntu-latest
+    needs: run-shell-script
+
+    steps:
+      - name: Pull MongoDB image
+        run: docker pull mongo:latest
+
+  # ==================================================
+  # JOB 4: Run MongoDB Container
+  # ==================================================
+  run-mongo-container:
+    name: 4 - Run MongoDB Container
+    runs-on: ubuntu-latest
+    needs: pull-mongo-image
+
+    steps:
+      - name: Pull MongoDB image
+        run: docker pull mongo:latest
+
+      - name: Run MongoDB container
+        run: docker run -d --name mongodb mongo:latest
+
+      - name: Show running containers
+        run: docker ps
+
+      - name: Show MongoDB logs
+        run: docker logs mongodb
+
+  # ==================================================
+  # JOB 5: Test MongoDB Container
+  # ==================================================
+  test-mongo-container:
+    name: 5 - Test MongoDB Container
+    runs-on: ubuntu-latest
+    needs: run-mongo-container
+
+    steps:
+      - name: Pull MongoDB image
+        run: docker pull mongo:latest
+
+      - name: Start MongoDB container
+        run: docker run -d --name mongodb mongo:latest
+
+      - name: Wait for MongoDB
+        run: sleep 10
+
+      - name: Check MongoDB container
+        run: docker ps
+
+      - name: Check MongoDB logs
+        run: docker logs mongodb
